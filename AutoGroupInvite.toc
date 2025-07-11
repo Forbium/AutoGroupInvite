@@ -1,5 +1,6 @@
 ## Interface: 11200
 ## Author: Forbium
 ## Title: AutoGroupInvite
+## SavedVariables: FriendAutoGroup, FriendCheckBox
 AGInvite.lua
 AGInvite.xml

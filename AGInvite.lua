@@ -28,31 +28,40 @@ end
 
 --/run local l = FriendsFrameFriendButton1 kids = { l:GetChildren() };for _,framechild in ipairs(kids) do print("-"..framechild:GetName() ); end
 
+FriendAutoGroup = {}
+FriendCheckBox = {}
+for i = 1, GetNumFriends() do
+    -- Создаём галочку https://github.com/tekkub/wow-ui-source/blob/live/FrameXML/FriendsFrame.lua
+    --checkbox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
+    FriendCheckBox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
 
+    -- Устанавливаем позицию относительно элемента
+    FriendCheckBox[i]:SetPoint("LEFT", getglobal("FriendsFrameFriendButton"..i), "LEFT", -20, 0)
 
+    -- Меняем размер (по умолчанию большая)
+    FriendCheckBox[i]:SetWidth(20)
+    FriendCheckBox[i]:SetHeight(20)
 
--- Создаём галочку
-local checkbox = CreateFrame("CheckButton", "MyCheckbox1", FriendsFrameFriendButton1, "UICheckButtonTemplate")
+    -- Устанавливаем состояние (отмечена или нет)
+    FriendCheckBox[i]:SetChecked(false)
+    FriendCheckBox[i].i = i
 
--- Устанавливаем позицию относительно элемента
-checkbox:SetPoint("LEFT", FriendsFrameFriendButton1, "LEFT", -20, 0)
+    local checkbox = FriendCheckBox[i]
 
--- Меняем размер (по умолчанию большая)
-checkbox:SetWidth(20)
-checkbox:SetHeight(20)
-
--- Устанавливаем состояние (отмечена или нет)
-checkbox:SetChecked(false)
-
--- Добавляем обработчик клика
-checkbox:SetScript("OnClick", function()
-    if checkbox:GetChecked() then
-        DEFAULT_CHAT_FRAME:AddMessage("Галочка установлена!")
-        -- имя друга занести в массив
-    else
-        DEFAULT_CHAT_FRAME:AddMessage("Галочка снята!")
-    end
-end)
+    checkbox:SetScript("OnClick", function()
+        local index = checkbox.i
+        --local name, level, class, area, connected, status = GetFriendInfo(index)
+        if checkbox:GetChecked() then
+            DEFAULT_CHAT_FRAME:AddMessage("Галочка установлена на "..index.."!")
+            local name = GetFriendInfo(index)
+            FriendAutoGroup[index] = name
+            --DEFAULT_CHAT_FRAME:AddMessage(FriendAutoGroup[index])
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("Галочка снята на "..index.."!")
+            FriendAutoGroup[index] = nil
+        end
+    end)
+end
 
 
 function AGInvite_OnLoad()
@@ -90,7 +99,7 @@ function AGInvite_OnEvent(event)
         for i = 1, GetNumFriends() do
             local name, level, class, area, connected, status = GetFriendInfo(i)
             if name and connected and not onlineFriends[name] and status ~= "PARTY" and (IsPartyLeader() or (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0)) then
-                DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00Ваш друг зашел в игру:|r "..name)
+                --DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00Ваш друг зашел в игру:|r "..name)
                 --InviteUnit(name)
                 InviteByName(name)
                 onlineFriends[name] = true
@@ -100,24 +109,32 @@ function AGInvite_OnEvent(event)
         end
 
     elseif event == "PARTY_INVITE_REQUEST" then
+        -- https://stackoverflow.com/questions/61544551/is-there-a-way-to-get-the-last-chat-massage-in-shout-or-say
+
         local inviter = arg1
+        DEFAULT_CHAT_FRAME:AddMessage("inviter is " .. inviter)
+
         if UnitIsInFriendList(inviter) then
             AcceptGroup()
             DEFAULT_CHAT_FRAME:AddMessage("Accepted invite from: " .. inviter)
+            StaticPopup_Hide("PARTY_INVITE")
         else
-            DEFAULT_CHAT_FRAME:AddMessage(inviter.." is not your Friend")
+            --DEFAULT_CHAT_FRAME:AddMessage(inviter.." is not your Friend")
         end
     end
 end
 
 function UnitIsInFriendList(unit)
-    local index = 1
-    while GetFriendInfo(index) do
-        local name = GetFriendInfo(index)
-        if name == unit then
-            return true
+    --local index = 1
+    --while FriendAutoGroup[index] do
+    for index = 1, GetNumFriends() do
+        if FriendAutoGroup[index] ~= nil then
+            --DEFAULT_CHAT_FRAME:AddMessage(index .. " = " .. FriendAutoGroup[index])
+            if unit == FriendAutoGroup[index] then
+                --DEFAULT_CHAT_FRAME:AddMessage(unit .." проверку прошел ")
+                return true
+            end
         end
-        index = index + 1
     end
     return false
 end
