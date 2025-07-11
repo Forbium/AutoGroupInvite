@@ -29,6 +29,8 @@ end
 --/run local l = FriendsFrameFriendButton1 kids = { l:GetChildren() };for _,framechild in ipairs(kids) do print("-"..framechild:GetName() ); end
 
 
+
+
 -- Создаём галочку
 local checkbox = CreateFrame("CheckButton", "MyCheckbox1", FriendsFrameFriendButton1, "UICheckButtonTemplate")
 
@@ -43,9 +45,10 @@ checkbox:SetHeight(20)
 checkbox:SetChecked(false)
 
 -- Добавляем обработчик клика
-checkbox:SetScript("OnClick", function(self)
-    if self:GetChecked() then
+checkbox:SetScript("OnClick", function()
+    if checkbox:GetChecked() then
         DEFAULT_CHAT_FRAME:AddMessage("Галочка установлена!")
+        -- имя друга занести в массив
     else
         DEFAULT_CHAT_FRAME:AddMessage("Галочка снята!")
     end
@@ -73,7 +76,7 @@ function AGInvite_OnEvent(event)
                 onlineFriends[name] = true
                 if status ~= "PARTY" and IsPartyLeader() then
                     if name then
-                        InviteUnit(name)
+                        InviteByName(name)
                         DEFAULT_CHAT_FRAME:AddMessage("Invited "..name)
                     else
                         DEFAULT_CHAT_FRAME:AddMessage("Ошибка: имя друга nil на индексе "..index)
@@ -88,7 +91,8 @@ function AGInvite_OnEvent(event)
             local name, level, class, area, connected, status = GetFriendInfo(i)
             if name and connected and not onlineFriends[name] and status ~= "PARTY" and (IsPartyLeader() or (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0)) then
                 DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00Ваш друг зашел в игру:|r "..name)
-                InviteUnit(name)
+                --InviteUnit(name)
+                InviteByName(name)
                 onlineFriends[name] = true
             elseif not connected and onlineFriends[name] then
                 onlineFriends[name] = nil
