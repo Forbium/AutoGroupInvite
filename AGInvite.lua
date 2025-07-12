@@ -57,10 +57,17 @@ function SetCheckBoxesValue()
     end
 end
 
-
-
+function MakeInviteButton()
+    local AI_Button = CreateFrame("Button", "Invite", FriendsFrame, "UIPanelButtonTemplate")
+    AI_Button:SetPoint("TOP", FriendsFrame, "TOP", 120, -40)
+    AI_Button:SetWidth(60)
+    AI_Button:SetHeight(24)
+    AI_Button:SetText("Invite")
+    AI_Button:SetScript("OnClick", AGSendToAllRequest)
+end
 
 function AGMakeCheckBoxes()
+    MakeInviteButton()
     AI_CheckBoxes = {}
     for i = 1, GetNumFriends() do
         AI_CheckBoxes[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
@@ -78,7 +85,7 @@ function AGMakeCheckBoxes()
                 --DEFAULT_CHAT_FRAME:AddMessage(AI_FriendList, 1.0, 1.0, 0.0)
                 table.insert(AI_FriendList, name)
             else
-                DEFAULT_CHAT_FRAME:AddMessage("Try to uncheck ".. name, 1.0, 1.0, 0.0)
+                --DEFAULT_CHAT_FRAME:AddMessage("Try to uncheck ".. name, 1.0, 1.0, 0.0)
                 for j=1, table.getn(AI_FriendList) do
                     if name == AI_FriendList[j] then table.remove(AI_FriendList, j) end
                 end
