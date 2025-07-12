@@ -1,12 +1,3 @@
-function GetFriendsList()
-    index = 1
-    while GetFriendInfo(index) do
-        
-        DEFAULT_CHAT_FRAME:AddMessage(GetFriendInfo(index), 1.0, 1.0, 0.0)
-        index = index + 1
-    end
-end
-
 --/run local n,l,cl,a,c,s = GetFriendInfo(1) print(n.." "..l.." "..cl.." "..a.." "..c.." "..s)
 
 --FriendsFrameAddFriendButton:Hide()
@@ -28,121 +19,117 @@ end
 
 --/run local l = FriendsFrameFriendButton1 kids = { l:GetChildren() };for _,framechild in ipairs(kids) do print("-"..framechild:GetName() ); end
 
-FriendAutoGroup = {}
-FriendCheckBox = {}
-function makecheckbox()
-    FriendAutoGroup = {}
-    for i = 1, GetNumFriends() do
-        -- Создаём галочку https://github.com/tekkub/wow-ui-source/blob/live/FrameXML/FriendsFrame.lua
-        --checkbox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
-        FriendCheckBox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
+AI_FriendList = {}
+AI_CheckBoxes = {}
 
-        -- Устанавливаем позицию относительно элемента
-        FriendCheckBox[i]:SetPoint("LEFT", getglobal("FriendsFrameFriendButton"..i), "LEFT", -20, 0)
 
-        -- Меняем размер (по умолчанию большая)
-        FriendCheckBox[i]:SetWidth(20)
-        FriendCheckBox[i]:SetHeight(20)
 
-        -- Устанавливаем состояние (отмечена или нет)
-        FriendCheckBox[i]:SetChecked(false)
-        FriendCheckBox[i].i = i
+--Remove Friends from SaveVariable that are not in friend list
+function AGCleaning()
+    if AI_FriendList ~= nil then
+        for i=1, table.getn(AI_FriendList) do
+            local InFriendList = false
+            for j=1, GetNumFriends() do
+                if AI_FriendList[i] == GetFriendInfo(j)then
+                    InFriendList = true
+                    break
+                end
+            end
+            if InFriendList == false then
+                table.remove(AI_FriendList, i)
+            end
+        end
+    end
+end
 
-        local checkbox = FriendCheckBox[i]
-
-        checkbox:SetScript("OnClick", function()
-            local index = checkbox.i
-            --local name, level, class, area, connected, status = GetFriendInfo(index)
-            if checkbox:GetChecked() then
-                --DEFAULT_CHAT_FRAME:AddMessage("Галочка установлена на "..index.."!")
-                local name = GetFriendInfo(index)
-                FriendAutoGroup[index] = name
+--Set value in checkboxes to all friend list
+function SetCheckBoxesValue()
+    for i=1, GetNumFriends() do
+        local name = GetFriendInfo(i)
+        for j = 1, table.getn(AI_FriendList) do
+            if AI_FriendList[j] == name then
+                AI_CheckBoxes[i]:SetChecked(true)
+                break
             else
-                --DEFAULT_CHAT_FRAME:AddMessage("Галочка снята на "..index.."!")
-                FriendAutoGroup[index] = nil
+                AI_CheckBoxes[i]:SetChecked(false)
+            end
+        end
+    end
+end
+
+
+
+
+function AGMakeCheckBoxes()
+    AI_CheckBoxes = {}
+    for i = 1, GetNumFriends() do
+        AI_CheckBoxes[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
+        AI_CheckBoxes[i]:SetPoint("LEFT", getglobal("FriendsFrameFriendButton"..i), "LEFT", -20, 0)
+        AI_CheckBoxes[i]:SetWidth(20)
+        AI_CheckBoxes[i]:SetHeight(20)
+        AI_CheckBoxes[i].index = i
+
+        local AGcheckbox = AI_CheckBoxes[i]
+
+        AGcheckbox:SetScript("OnClick", function()
+            local index = AGcheckbox.index
+            local name = GetFriendInfo(index)
+            if AGcheckbox:GetChecked() then
+                --DEFAULT_CHAT_FRAME:AddMessage(AI_FriendList, 1.0, 1.0, 0.0)
+                table.insert(AI_FriendList, name)
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("Try to uncheck ".. name, 1.0, 1.0, 0.0)
+                for j=1, table.getn(AI_FriendList) do
+                    if name == AI_FriendList[j] then table.remove(AI_FriendList, j) end
+                end
             end
         end)
     end
 end
-local checkboxloadmaker = false
 
-function AGInvite_OnLoad()
-    this:RegisterEvent("PLAYER_ENTERING_WORLD")
-    this:RegisterEvent("FRIENDLIST_UPDATE")
-    this:RegisterEvent("PARTY_INVITE_REQUEST")
-    DEFAULT_CHAT_FRAME:AddMessage("AGInvite is loaded", 1.0, 1.0, 0.0)
-    checkboxloadmaker = true
-end
-
-local onlineFriends = {}
-
-function AGInvite_OnEvent(event)
-    if event == "PLAYER_ENTERING_WORLD" then
-        local index = 1
-        for k in pairs(onlineFriends) do
-            onlineFriends[k] = nil
-        end
-        for index = 1, GetNumFriends() do
-            local name, level, class, area, connected, status = GetFriendInfo(index)
-            if connected then
-                onlineFriends[name] = true
-                if status ~= "PARTY" and IsPartyLeader() then
-                    if name then
-                        InviteByName(name)
-                        DEFAULT_CHAT_FRAME:AddMessage("Invited "..name)
-                    else
-                        DEFAULT_CHAT_FRAME:AddMessage("Ошибка: имя друга nil на индексе "..index)
-                    end
-                end
-            end
-        end
-
-
-    elseif event == "FRIENDLIST_UPDATE" then
-        if checkboxloadmaker == true then
-            checkboxloadmaker = false
-            makecheckbox()
-            DEFAULT_CHAT_FRAME:AddMessage("AGInvite checkboxes are maked", 1.0, 1.0, 0.0)
-        end
-        for i = 1, GetNumFriends() do
-            local name, level, class, area, connected, status = GetFriendInfo(i)
-            if name and connected and not onlineFriends[name] and status ~= "PARTY" and (IsPartyLeader() or (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0)) then
-                --DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00Ваш друг зашел в игру:|r "..name)
-                --InviteUnit(name)
-                InviteByName(name)
-                onlineFriends[name] = true
-            elseif not connected and onlineFriends[name] then
-                onlineFriends[name] = nil
-            end
-        end
-
-    elseif event == "PARTY_INVITE_REQUEST" then
-        -- https://stackoverflow.com/questions/61544551/is-there-a-way-to-get-the-last-chat-massage-in-shout-or-say
-
-        local inviter = arg1
-        DEFAULT_CHAT_FRAME:AddMessage("inviter is " .. inviter)
-
-        if UnitIsInFriendList(inviter) then
-            AcceptGroup()
-            DEFAULT_CHAT_FRAME:AddMessage("Accepted invite from: " .. inviter)
-            StaticPopup_Hide("PARTY_INVITE")
-        else
-            --DEFAULT_CHAT_FRAME:AddMessage(inviter.." is not your Friend")
+function AGSendToAllRequest() -- /run AGSendToAllRequest()
+    if AI_FriendList ~= nil then
+        for j = 1, table.getn(AI_FriendList) do
+            InviteByName(AI_FriendList[j])
         end
     end
 end
 
 function UnitIsInFriendList(unit)
-    --local index = 1
-    --while FriendAutoGroup[index] do
-    for index = 1, GetNumFriends() do
-        if FriendAutoGroup[index] ~= nil then
-            --DEFAULT_CHAT_FRAME:AddMessage(index .. " = " .. FriendAutoGroup[index])
-            if unit == FriendAutoGroup[index] then
-                --DEFAULT_CHAT_FRAME:AddMessage(unit .." проверку прошел ")
+    for i = 1, GetNumFriends() do
+        if AI_FriendList[i] ~= nil then
+            if unit == AI_FriendList[i] then
                 return true
             end
         end
     end
     return false
+end
+
+local checkboxloadmaker = false
+function AGInvite_OnEvent(event)
+    if event == "PLAYER_ENTERING_WORLD" then
+        --AGSendToAllRequest()
+    elseif event == "FRIENDLIST_UPDATE" then
+        AGCleaning()
+        AGMakeCheckBoxes()
+        if checkboxloadmaker == true then
+            checkboxloadmaker = false
+            SetCheckBoxesValue()
+        end
+    elseif event == "PARTY_INVITE_REQUEST" then
+        if UnitIsInFriendList(arg1) then
+            AcceptGroup()
+            DEFAULT_CHAT_FRAME:AddMessage("Accepted invite from: " .. arg1)
+            StaticPopup_Hide("PARTY_INVITE")
+        end
+    end
+end
+
+function AGInvite_OnLoad()
+    this:RegisterEvent("PLAYER_ENTERING_WORLD")
+    this:RegisterEvent("FRIENDLIST_UPDATE")
+    this:RegisterEvent("PARTY_INVITE_REQUEST")
+    DEFAULT_CHAT_FRAME:AddMessage("AGInvite_OnLoad...", 1.0, 1.0, 0.0)
+    checkboxloadmaker = true
 end
