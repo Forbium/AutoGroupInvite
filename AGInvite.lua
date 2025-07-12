@@ -30,45 +30,48 @@ end
 
 FriendAutoGroup = {}
 FriendCheckBox = {}
-for i = 1, GetNumFriends() do
-    -- Создаём галочку https://github.com/tekkub/wow-ui-source/blob/live/FrameXML/FriendsFrame.lua
-    --checkbox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
-    FriendCheckBox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
+function makecheckbox()
+    FriendAutoGroup = {}
+    for i = 1, GetNumFriends() do
+        -- Создаём галочку https://github.com/tekkub/wow-ui-source/blob/live/FrameXML/FriendsFrame.lua
+        --checkbox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
+        FriendCheckBox[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
 
-    -- Устанавливаем позицию относительно элемента
-    FriendCheckBox[i]:SetPoint("LEFT", getglobal("FriendsFrameFriendButton"..i), "LEFT", -20, 0)
+        -- Устанавливаем позицию относительно элемента
+        FriendCheckBox[i]:SetPoint("LEFT", getglobal("FriendsFrameFriendButton"..i), "LEFT", -20, 0)
 
-    -- Меняем размер (по умолчанию большая)
-    FriendCheckBox[i]:SetWidth(20)
-    FriendCheckBox[i]:SetHeight(20)
+        -- Меняем размер (по умолчанию большая)
+        FriendCheckBox[i]:SetWidth(20)
+        FriendCheckBox[i]:SetHeight(20)
 
-    -- Устанавливаем состояние (отмечена или нет)
-    FriendCheckBox[i]:SetChecked(false)
-    FriendCheckBox[i].i = i
+        -- Устанавливаем состояние (отмечена или нет)
+        FriendCheckBox[i]:SetChecked(false)
+        FriendCheckBox[i].i = i
 
-    local checkbox = FriendCheckBox[i]
+        local checkbox = FriendCheckBox[i]
 
-    checkbox:SetScript("OnClick", function()
-        local index = checkbox.i
-        --local name, level, class, area, connected, status = GetFriendInfo(index)
-        if checkbox:GetChecked() then
-            DEFAULT_CHAT_FRAME:AddMessage("Галочка установлена на "..index.."!")
-            local name = GetFriendInfo(index)
-            FriendAutoGroup[index] = name
-            --DEFAULT_CHAT_FRAME:AddMessage(FriendAutoGroup[index])
-        else
-            DEFAULT_CHAT_FRAME:AddMessage("Галочка снята на "..index.."!")
-            FriendAutoGroup[index] = nil
-        end
-    end)
+        checkbox:SetScript("OnClick", function()
+            local index = checkbox.i
+            --local name, level, class, area, connected, status = GetFriendInfo(index)
+            if checkbox:GetChecked() then
+                --DEFAULT_CHAT_FRAME:AddMessage("Галочка установлена на "..index.."!")
+                local name = GetFriendInfo(index)
+                FriendAutoGroup[index] = name
+            else
+                --DEFAULT_CHAT_FRAME:AddMessage("Галочка снята на "..index.."!")
+                FriendAutoGroup[index] = nil
+            end
+        end)
+    end
 end
-
+local checkboxloadmaker = false
 
 function AGInvite_OnLoad()
     this:RegisterEvent("PLAYER_ENTERING_WORLD")
     this:RegisterEvent("FRIENDLIST_UPDATE")
     this:RegisterEvent("PARTY_INVITE_REQUEST")
     DEFAULT_CHAT_FRAME:AddMessage("AGInvite is loaded", 1.0, 1.0, 0.0)
+    checkboxloadmaker = true
 end
 
 local onlineFriends = {}
@@ -96,6 +99,11 @@ function AGInvite_OnEvent(event)
 
 
     elseif event == "FRIENDLIST_UPDATE" then
+        if checkboxloadmaker == true then
+            checkboxloadmaker = false
+            makecheckbox()
+            DEFAULT_CHAT_FRAME:AddMessage("AGInvite checkboxes are maked", 1.0, 1.0, 0.0)
+        end
         for i = 1, GetNumFriends() do
             local name, level, class, area, connected, status = GetFriendInfo(i)
             if name and connected and not onlineFriends[name] and status ~= "PARTY" and (IsPartyLeader() or (GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0)) then
