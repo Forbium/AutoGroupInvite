@@ -2,5 +2,4 @@
 ## Author: Forbium
 ## Title: AutoGroupInvite
 ## SavedVariables: AI_FriendList
-AGInvite.lua
 AGInvite.xml

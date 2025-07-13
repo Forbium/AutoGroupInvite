@@ -2,7 +2,6 @@
   <Script file="AGInvite.lua"/>
   <Frame name="AGInvite" frameStrata="HIGH" parent="UIParent" toplevel="true" hidden="true" movable="true" enableMouse="true">
     
-    
     <Scripts>
 		<OnLoad>
 		   AGInvite_OnLoad();
@@ -13,6 +12,7 @@
         <OnUpdate>
             AGInvite_OnUpdate();
         </OnUpdate>
-	</Scripts>
+	  </Scripts>
+
   </Frame>
 </Ui>

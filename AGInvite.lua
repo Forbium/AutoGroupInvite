@@ -18,11 +18,10 @@
 --/run local l = FriendsListFrame kids = { l:GetChildren() };for _,framechild in ipairs(kids) do print("-"..framechild:GetName() ); end
 
 --/run local l = FriendsFrameFriendButton1 kids = { l:GetChildren() };for _,framechild in ipairs(kids) do print("-"..framechild:GetName() ); end
+--print(FriendsFrameFriendsScrollFrame.scrollbar)
 
 AI_FriendList = {}
 AI_CheckBoxes = {}
-
-
 
 --Remove Friends from SaveVariable that are not in friend list
 function AGCleaning()
@@ -44,8 +43,10 @@ end
 
 --Set value in checkboxes to all friend list
 function SetCheckBoxesValue()
-    for i=1, GetNumFriends() do
-        local name = GetFriendInfo(i)
+    for i=1, 10 do
+        local offset = FriendsFrameFriendsScrollFrame.offset or 0
+        local friendIndex = offset + i
+        local name = GetFriendInfo(friendIndex)
         for j = 1, table.getn(AI_FriendList) do
             if AI_FriendList[j] == name then
                 AI_CheckBoxes[i]:SetChecked(true)
@@ -69,7 +70,7 @@ end
 function AGMakeCheckBoxes()
     MakeInviteButton()
     AI_CheckBoxes = {}
-    for i = 1, GetNumFriends() do
+    for i = 1, 10 do
         AI_CheckBoxes[i] = CreateFrame("CheckButton", "MyCheckbox"..i, getglobal("FriendsFrameFriendButton"..i), "UICheckButtonTemplate")
         AI_CheckBoxes[i]:SetPoint("LEFT", getglobal("FriendsFrameFriendButton"..i), "LEFT", -20, 0)
         AI_CheckBoxes[i]:SetWidth(20)
@@ -80,12 +81,14 @@ function AGMakeCheckBoxes()
 
         AGcheckbox:SetScript("OnClick", function()
             local index = AGcheckbox.index
-            local name = GetFriendInfo(index)
+            local offset = FriendsFrameFriendsScrollFrame.offset or 0
+            local friendIndex = offset + index
+            local name = GetFriendInfo(friendIndex)
             if AGcheckbox:GetChecked() then
-                --DEFAULT_CHAT_FRAME:AddMessage(AI_FriendList, 1.0, 1.0, 0.0)
+                DEFAULT_CHAT_FRAME:AddMessage("Try to ADD ".. name, 1.0, 1.0, 0.0)
                 table.insert(AI_FriendList, name)
             else
-                --DEFAULT_CHAT_FRAME:AddMessage("Try to uncheck ".. name, 1.0, 1.0, 0.0)
+                DEFAULT_CHAT_FRAME:AddMessage("Try to REMOVE ".. name, 1.0, 1.0, 0.0)
                 for j=1, table.getn(AI_FriendList) do
                     if name == AI_FriendList[j] then table.remove(AI_FriendList, j) end
                 end
@@ -113,17 +116,27 @@ function UnitIsInFriendList(unit)
     return false
 end
 
+--[[
+function MakeSettingsFrame()
+    AGSettingsFrame:SetPoint("CENTER",0,0)
+    AGSettingsFrame:SetWidth(160)
+    AGSettingsFrame:SetHeight(200)
+    AGSettingsFrame:Show()
+end]]
+
+
+
+
 local checkboxloadmaker = false
 function AGInvite_OnEvent(event)
     if event == "PLAYER_ENTERING_WORLD" then
-        --AGSendToAllRequest()
     elseif event == "FRIENDLIST_UPDATE" then
         AGCleaning()
-        AGMakeCheckBoxes()
         if checkboxloadmaker == true then
             checkboxloadmaker = false
-            SetCheckBoxesValue()
+            AGMakeCheckBoxes()
         end
+        SetCheckBoxesValue()
     elseif event == "PARTY_INVITE_REQUEST" then
         if UnitIsInFriendList(arg1) then
             AcceptGroup()
@@ -139,4 +152,14 @@ function AGInvite_OnLoad()
     this:RegisterEvent("PARTY_INVITE_REQUEST")
     DEFAULT_CHAT_FRAME:AddMessage("AGInvite_OnLoad...", 1.0, 1.0, 0.0)
     checkboxloadmaker = true
+    local lastOffset = 0
+
+    FriendsFrameFriendsScrollFrame:SetScript("OnUpdate", function()
+        local offset = FriendsFrameFriendsScrollFrame.offset or 0
+        if offset ~= lastOffset then
+            lastOffset = offset
+            --DEFAULT_CHAT_FRAME:AddMessage("Offset изменился: "..offset)
+            SetCheckBoxesValue()
+        end
+    end)
 end
